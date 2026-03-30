@@ -1,0 +1,365 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          413336.2209475747,
+          4086888.3654328943
+        ]
+      },
+      "properties": {
+        "t": 0,
+        "radius": 10000.0,
+        "wind_speed": 30.0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          412671.6545096828,
+          4085028.1922585214
+        ]
+      },
+      "properties": {
+        "t": 1,
+        "radius": 10680.833245481233,
+        "wind_speed": 34.0849994728874
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          412007.0880717909,
+          4083168.019084149
+        ]
+      },
+      "properties": {
+        "t": 2,
+        "radius": 11348.983855785122,
+        "wind_speed": 38.09390313471073
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          411342.5216338989,
+          4081307.845909776
+        ]
+      },
+      "properties": {
+        "t": 3,
+        "radius": 11992.005449231207,
+        "wind_speed": 41.952032695387246
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          410677.955196007,
+          4079447.6727354033
+        ]
+      },
+      "properties": {
+        "t": 4,
+        "radius": 12597.919750177167,
+        "wind_speed": 45.58751850106301
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          410013.38875811506,
+          4077587.499561031
+        ]
+      },
+      "properties": {
+        "t": 5,
+        "radius": 13155.439721630264,
+        "wind_speed": 48.93263832978158
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          409348.82232022315,
+          4075727.326386658
+        ]
+      },
+      "properties": {
+        "t": 6,
+        "radius": 13654.17982139062,
+        "wind_speed": 51.92507892834372
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          408684.2558823312,
+          4073867.153212285
+        ]
+      },
+      "properties": {
+        "t": 7,
+        "radius": 14084.84946505221,
+        "wind_speed": 54.50909679031326
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          408019.6894444393,
+          4072006.9800379127
+        ]
+      },
+      "properties": {
+        "t": 8,
+        "radius": 14439.426092011876,
+        "wind_speed": 56.636556552071255
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          407355.12300654734,
+          4070146.80686354
+        ]
+      },
+      "properties": {
+        "t": 9,
+        "radius": 14711.304610594103,
+        "wind_speed": 58.26782766356462
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          406690.5565686554,
+          4068286.633689167
+        ]
+      },
+      "properties": {
+        "t": 10,
+        "radius": 14895.420438411613,
+        "wind_speed": 59.37252263046969
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          406025.9901307635,
+          4066426.4605147946
+        ]
+      },
+      "properties": {
+        "t": 11,
+        "radius": 14988.343845952695,
+        "wind_speed": 59.93006307571618
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          405361.4236928716,
+          4064566.2873404217
+        ]
+      },
+      "properties": {
+        "t": 12,
+        "radius": 14988.343845952695,
+        "wind_speed": 59.93006307571618
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          404696.85725497967,
+          4062706.1141660493
+        ]
+      },
+      "properties": {
+        "t": 13,
+        "radius": 14895.420438411615,
+        "wind_speed": 59.37252263046969
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          404032.29081708775,
+          4060845.9409916764
+        ]
+      },
+      "properties": {
+        "t": 14,
+        "radius": 14711.304610594103,
+        "wind_speed": 58.26782766356462
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          403367.7243791958,
+          4058985.7678173035
+        ]
+      },
+      "properties": {
+        "t": 15,
+        "radius": 14439.426092011876,
+        "wind_speed": 56.636556552071255
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          402703.15794130386,
+          4057125.594642931
+        ]
+      },
+      "properties": {
+        "t": 16,
+        "radius": 14084.849465052212,
+        "wind_speed": 54.509096790313265
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          402038.59150341194,
+          4055265.4214685583
+        ]
+      },
+      "properties": {
+        "t": 17,
+        "radius": 13654.179821390622,
+        "wind_speed": 51.92507892834372
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          401374.02506552,
+          4053405.2482941854
+        ]
+      },
+      "properties": {
+        "t": 18,
+        "radius": 13155.439721630264,
+        "wind_speed": 48.93263832978159
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          400709.4586276281,
+          4051545.075119813
+        ]
+      },
+      "properties": {
+        "t": 19,
+        "radius": 12597.919750177167,
+        "wind_speed": 45.587518501063
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          400044.8921897362,
+          4049684.90194544
+        ]
+      },
+      "properties": {
+        "t": 20,
+        "radius": 11992.005449231208,
+        "wind_speed": 41.95203269538725
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          399380.3257518442,
+          4047824.728771067
+        ]
+      },
+      "properties": {
+        "t": 21,
+        "radius": 11348.983855785124,
+        "wind_speed": 38.09390313471074
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          398715.7593139523,
+          4045964.555596695
+        ]
+      },
+      "properties": {
+        "t": 22,
+        "radius": 10680.833245481233,
+        "wind_speed": 34.0849994728874
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          398051.1928760604,
+          4044104.382422322
+        ]
+      },
+      "properties": {
+        "t": 23,
+        "radius": 10000.0,
+        "wind_speed": 30.000000000000004
+      }
+    }
+  ]
+}

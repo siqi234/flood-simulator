@@ -38,6 +38,7 @@ def lognormal_cdf_tree(x, mu, sigma):
     """
     if x <= 0:
         return 0.0
+    
     z = (log(x) - mu) / (sigma * sqrt(2))
     return 0.5 * erfc(-z)
 
@@ -85,8 +86,8 @@ def load_data(
 def assess_road_blockages(
     storm_data,
     roads_gdf,
-    mu_t    = 3.50,   # ln-mean  (Table II: Tree Fragility Mean)
-    sigma_t = 0.30,   # ln-std   (Table II: Tree Fragility Std)
+    mu_t    = 3.91,   # ln-mean  (Table II: Tree Fragility Mean)
+    sigma_t = 0.33,   # ln-std   (Table II: Tree Fragility Std)
     seed    = 42,
 ):
     
@@ -94,11 +95,13 @@ def assess_road_blockages(
         Algorithm 3: Road Blockage Assessment.
 
         A road is blocked when at least one of its roadside trees falls onto it.
-        The probability of blocking given n trees and local wind speed w is:
+        The probability of blocking given n trees, local wind speed w, and
+        blockage factor b ~ Uniform[0.5, 1.0] is (paper eq., Algorithm 3):
 
-            P(block) = 1 − (1 − P_tree_fail(w))^n
+            P(block) = 1 − (1 − P_tree_fail(w) · b)^n
 
-        where P_tree_fail uses the lognormal fragility curve with (μ_T, σ_T).
+        b accounts for uncertainty in tree lean, branching, and road proximity.
+        It is drawn fresh each timestep for each road segment.
         Blockage is permanent once triggered (no restoration in this algorithm).
 
         Parameters:
@@ -148,7 +151,8 @@ def assess_road_blockages(
             w_local = w_gust * decay
 
             p_tree  = lognormal_cdf_tree(w_local, mu_t, sigma_t)
-            p_block = 1.0 - (1.0 - p_tree) ** n   # at least one tree falls
+            b       = rng.uniform(0.5, 1.0)        # blockage factor (paper Algorithm 3)
+            p_block = 1.0 - (1.0 - p_tree * b) ** n
             R_prob[t, i] = p_block
 
             if rng.random() < p_block:

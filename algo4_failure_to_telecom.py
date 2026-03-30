@@ -10,7 +10,6 @@ Algorithm 4: Failure Propagation to Telecommunication Network
     Output:
         - Tower status T_status: (T, N_towers) — 0=operational, 1=failed
 
-Public API: load_data, assess_telecom_failures, animate_telecom_failures
 '''
 
 import json

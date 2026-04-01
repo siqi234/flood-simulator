@@ -269,7 +269,7 @@ def animate_telecom_failures(
     return anim
 
 
-# Main
+# Main function
 if __name__ == "__main__":
     from algo2_powerline_failure import assess_powerline_failures as _alg2 
     storm_data, lines_proj, subs_proj, towers_proj, boundary_gdf = load_data()

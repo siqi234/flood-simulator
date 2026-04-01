@@ -266,7 +266,7 @@ def animate_blockages(
     return anim
 
 
-# Main
+# Main function
 if __name__ == "__main__":
     storm_data, roads_proj, boundary_gdf = load_data()
 

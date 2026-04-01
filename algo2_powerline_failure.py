@@ -236,7 +236,7 @@ def animate_failures(
     plt.tight_layout()
     return anim
 
-# Main function to run the algorithm and animation
+# Main function
 if __name__ == "__main__":
     storm_data, lines_proj, subs_proj, boundary_gdf = load_data()
 

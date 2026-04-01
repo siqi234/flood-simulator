@@ -6,6 +6,7 @@ Algorithm 3: Road Blockage Assessment
         - Road network G_roads with tree counts: use a synthetic data
         - Fragility parameters (μ_T, σ_T): use synthetic parameters
         - Time horizon T: 24 hours
+        
     Output:
         - Road status R_status: (T, N) array — 0 = clear, 1 = blocked
         - Blockage probabilities R_prob: (T, N) array

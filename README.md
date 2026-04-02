@@ -1,7 +1,10 @@
 # Infrastructure Failure Simulatior Implementation
-()
+To do: change the formatting using Gymnasium. 
 
 ### Notes for each algorithms
+
+#### In ./windstorm_sim/
+
 '''
 Algorithm 2: Power Line Failure Assessment
 

@@ -1,0 +1,365 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 0,
+        "flood_radius": 0.0,
+        "max_depth": 0.0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 1,
+        "flood_radius": 328.00883145579957,
+        "max_depth": 0.009233744553646672
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 2,
+        "flood_radius": 1303.9586597938626,
+        "max_depth": 0.03670761277863485
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 3,
+        "flood_radius": 2903.8183612487173,
+        "max_depth": 0.08174510685872408
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 4,
+        "flood_radius": 5088.194080340617,
+        "max_depth": 0.1432372542187894
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 5,
+        "flood_radius": 7803.299237338137,
+        "max_depth": 0.21966991411008932
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 6,
+        "flood_radius": 10982.278932358602,
+        "max_depth": 0.30916106078064515
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 7,
+        "flood_radius": 14546.856134881882,
+        "max_depth": 0.40950712519533994
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 8,
+        "flood_radius": 18409.259124028365,
+        "max_depth": 0.5182372542187894
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 9,
+        "flood_radius": 22474.38271962467,
+        "max_depth": 0.6326741512198268
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 10,
+        "flood_radius": 26642.130087375495,
+        "max_depth": 0.7499999999999999
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 11,
+        "flood_radius": 30809.877455126327,
+        "max_depth": 0.8673258487801732
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 12,
+        "flood_radius": 34875.00105072263,
+        "max_depth": 0.9817627457812106
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 13,
+        "flood_radius": 38737.404039869114,
+        "max_depth": 1.09049287480466
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 14,
+        "flood_radius": 42301.98124239239,
+        "max_depth": 1.1908389392193546
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 15,
+        "flood_radius": 45480.960937412856,
+        "max_depth": 1.2803300858899105
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 16,
+        "flood_radius": 48196.06609441038,
+        "max_depth": 1.3567627457812106
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 17,
+        "flood_radius": 50380.44181350228,
+        "max_depth": 1.4182548931412757
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 18,
+        "flood_radius": 51980.30151495714,
+        "max_depth": 1.4632923872213652
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 19,
+        "flood_radius": 52956.2513432952,
+        "max_depth": 1.4907662554463532
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 20,
+        "flood_radius": 53284.260174751,
+        "max_depth": 1.5
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 21,
+        "flood_radius": 53284.260174751,
+        "max_depth": 1.5
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 22,
+        "flood_radius": 53284.260174751,
+        "max_depth": 1.5
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          422494.2599676574,
+          4066649.245646095
+        ]
+      },
+      "properties": {
+        "t": 23,
+        "flood_radius": 53284.260174751,
+        "max_depth": 1.5
+      }
+    }
+  ]
+}

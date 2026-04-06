@@ -24,6 +24,7 @@ from math import log, erfc, sqrt
 
 # Fragility function for flood situation: same as windstorm version but using flood depth instead of wind speed.
 # x is now flood depth (m) instead of wind speed (m/s)
+# Need to be changed in the future if we are simulating the flooding situation. 
 def lognormal_cdf_powerline(x, mu, sigma):
     """
     Lognormal CDF fragility — eq. (4) in the paper.

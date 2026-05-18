@@ -51,7 +51,7 @@ class FloodDisasterEnv(gym.Env):
         boundary_path="jsons/Precinct_Boundaries.geojson",
         epsg=32618,
         mu_line=-0.22,  sigma_line=0.30,
-        mu_road=-0.92,  sigma_road=0.30,
+        mu_road=-0.0,  sigma_road=0.30,
         render_mode=None,
     ):
         super().__init__()
@@ -232,6 +232,7 @@ class FloodDisasterEnv(gym.Env):
         )
         plt.draw()
         plt.pause(0.3)
+        input("Press Enter to continue to next step...")
 
     # ------------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 # Infrastructure Failure Simulatior Implementation
-To do: change the formatting using Gymnasium. 
+Reference: B. V. Venkatasubramanian, C. Laoudias and M. Panteli, "Cascading Failures and Resilience in Interdependent Critical Infrastructures: A Dynamic Approach," in IEEE Systems Journal, vol. 19, no. 4, pp. 999-1010, Dec. 2025, doi: [10.1109/JSYST.2025.3629327][https://ieeexplore.ieee.org/document/11260973].
 
 ### Notes for each algorithms
 
@@ -46,3 +46,6 @@ Algorithm 4: Failure Propagation to Telecommunication Network
         - Tower status matrix T_status: {tower_id: status (0 for operational, 1 for failed)}
         
 '''
+
+### To-Dos
+- @ 5/18/2026: add SI model

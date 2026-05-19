@@ -38,11 +38,15 @@ class PowerlineFailureEnv(gym.Env):
         mu=-0.22,
         sigma=0.30,
         render_mode=None,
+        use_si_model=False,
+        edge_factor=0.5,
     ):
         super().__init__()
         self.mu = mu
         self.sigma = sigma
         self.render_mode = render_mode
+        self.use_si_model = use_si_model
+        self.edge_factor = edge_factor
 
         # Load data
         with open(flood_path) as f:
@@ -72,6 +76,12 @@ class PowerlineFailureEnv(gym.Env):
             self.lines_proj.geometry.interpolate(0.5, normalized=True).y.values.astype(float)
         )
 
+        # Build adjacency matrix if using SI model
+        if self.use_si_model:
+            self._adjacency = self._build_adjacency_matrix()
+        else:
+            self._adjacency = None
+
         obs_size = 3 + self.n_lines
         self.observation_space = spaces.Box(low=0.0, high=np.inf, shape=(obs_size,), dtype=np.float32)
         self.action_space = spaces.Discrete(1)
@@ -98,7 +108,17 @@ class PowerlineFailureEnv(gym.Env):
         for i in np.where(self._L_flooded)[0]:
             if self._L_status[i] == 1:
                 local_depth = depth * max(0.0, 1.0 - dist[i] / radius) if radius > 0 else 0.0
-                if self.np_random.random() < self._lognormal_cdf(local_depth):
+                p_direct = self._lognormal_cdf(local_depth)
+
+                if self.use_si_model:
+                    # SI Model: Direct + Cascading
+                    p_cascade = self._compute_cascading_probability(i, p_direct)
+                    p_fail = p_direct + p_cascade * (1.0 - p_direct)
+                else:
+                    # IID Model: Direct only
+                    p_fail = p_direct
+
+                if self.np_random.random() < p_fail:
                     self._L_status[i] = 0
 
         self.t += 1
@@ -192,6 +212,49 @@ class PowerlineFailureEnv(gym.Env):
         z = (log(x) - self.mu) / (self.sigma * sqrt(2))
         return 0.5 * erfc(-z)
 
+    def _build_adjacency_matrix(self):
+        """
+        Build adjacency matrix from power line network topology.
+        Two lines are adjacent if they share a node (from_node or to_node).
+        """
+        N = self.n_lines
+        adjacency = np.zeros((N, N), dtype=int)
+
+        for i in range(N):
+            from_node_i = self.lines_proj.iloc[i].get('from_node')
+            to_node_i = self.lines_proj.iloc[i].get('to_node')
+
+            for j in range(N):
+                if i != j:
+                    from_node_j = self.lines_proj.iloc[j].get('from_node')
+                    to_node_j = self.lines_proj.iloc[j].get('to_node')
+
+                    # Lines are connected if they share a node
+                    if from_node_i in (from_node_j, to_node_j) or to_node_i in (from_node_j, to_node_j):
+                        adjacency[i, j] = 1
+
+        return adjacency
+
+    def _compute_cascading_probability(self, line_idx, direct_prob):
+        """
+        Compute probability of cascading failure through network propagation.
+        P_cascade = 1 - exp(sum of log(1 - q_ij * A_ij * c_i))
+        """
+        log_sum = 0.0
+
+        for i in range(self.n_lines):
+            if i != line_idx and self._L_status[i] == 0:  # if neighbor i has failed
+                # Transmission probability through edge (i, line_idx)
+                q_ij = self.edge_factor * direct_prob * self._adjacency[i, line_idx]
+
+                # Probability that line_idx is NOT infected by i
+                term = 1.0 - q_ij
+                log_sum += log(max(term, 1e-10))
+
+        # Convert back from log space
+        cascade_prob = 1.0 - np.exp(log_sum)
+        return cascade_prob
+
     # Expose status for downstream envs (Algo 4)
     @property
     def L_status(self):
@@ -201,9 +264,11 @@ class PowerlineFailureEnv(gym.Env):
 # ----------------------------------------------------------------------
 
 if __name__ == "__main__":
-    env = PowerlineFailureEnv(render_mode="human")
+    # Example: Run with SI model enabled
+    env = PowerlineFailureEnv(render_mode="human", use_si_model=True, edge_factor=0.5)
     obs, _ = env.reset(seed=42)
-    print(f"Power lines: {env.n_lines}  |  Time horizon: {env.T} hours\n")
+    print(f"Power lines: {env.n_lines}  |  Time horizon: {env.T} hours")
+    print(f"SI Model: ENABLED  |  Edge Factor: 0.5\n")
 
     terminated = False
     while not terminated:

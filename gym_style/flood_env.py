@@ -53,6 +53,8 @@ class FloodDisasterEnv(gym.Env):
         mu_line=-0.22,  sigma_line=0.30,
         mu_road=-0.0,  sigma_road=0.30,
         render_mode=None,
+        use_si_model=False,
+        edge_factor=0.5,
     ):
         super().__init__()
         self.render_mode = render_mode
@@ -62,6 +64,7 @@ class FloodDisasterEnv(gym.Env):
             flood_path=flood_path, powerline_path=powerline_path,
             substation_path=substation_path, boundary_path=boundary_path,
             epsg=epsg, mu=mu_line, sigma=sigma_line,
+            use_si_model=use_si_model, edge_factor=edge_factor,
         )
         self._algo3 = RoadBlockageEnv(
             flood_path=flood_path, roads_path=roads_path,
@@ -250,14 +253,17 @@ class FloodDisasterEnv(gym.Env):
 # ----------------------------------------------------------------------
 
 if __name__ == "__main__":
-    env = FloodDisasterEnv(render_mode="human")
+    # Example: Run with SI model enabled
+    env = FloodDisasterEnv(render_mode="human", use_si_model=True, edge_factor=0.5)
     obs, _ = env.reset(seed=42)
 
     print(f"Observation size : {len(obs)}")
     print(f"  Power lines    : {env.n_lines}")
     print(f"  Roads          : {env.n_roads}")
     print(f"  Telecom towers : {env.n_towers}")
-    print(f"  Time horizon   : {env.T} hours\n")
+    print(f"  Time horizon   : {env.T} hours")
+    print(f"  SI Model       : ENABLED (use_si_model=True)")
+    print(f"  Edge Factor    : 0.5\n")
 
     terminated = False
     while not terminated:

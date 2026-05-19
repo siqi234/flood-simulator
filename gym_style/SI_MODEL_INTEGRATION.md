@@ -1,8 +1,6 @@
 # SI Model Integration Report
 ## Cascading Failure Model for Flood Simulator
 
-**Date:** 2026-05-19  
-**Author:** Claude Code  
 **Reference:** SI model adapted from MATLAB implementation (SCCIFMI.m)
 
 ---

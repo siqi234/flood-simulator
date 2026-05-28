@@ -35,32 +35,47 @@ Where:
 
 ### 2.2 Cascading Failure Probability (SI Model Only)
 
-For each line `j` at time `t`, the cascading failure probability is:
+For each intact line `j` at time `t`, the cascading failure probability is:
 
 ```
-P_cascade(j,t) = 1 - exp( Σ_i log(1 - q(i,j,t) * A(i,j) * c(t,i)) )
+P_cascade(j,t) = 1 - exp( Σ_i log(1 - q(i,j) * A(i,j) * [c(t,i) == 0]) )
 ```
 
 Where:
-- `q(i,j,t)` = edge transmission probability from line `i` to line `j`
-  - Computed as: `q(i,j) = edge_factor × P_direct(j) × A(i,j)`
-- `A(i,j)` = adjacency matrix (1 if lines share a node, 0 otherwise)
-- `c(t,i)` = status of line `i` at time `t` (0=failed, 1=intact)
-- `edge_factor` = user-tuned parameter (0-1) controlling cascade strength
+- `q(i,j)` = transmission probability from failed line `i` to intact line `j`
+  - Currently: `q(i,j) = edge_factor` (fixed value for all edges)
+  - Physical meaning: probability that a failed neighbour causes line `j` to also fail
+- `A(i,j)` = adjacency matrix (1 if lines share a substation node, 0 otherwise)
+- `c(t,i) == 0` = line `i` is already failed at time `t`
+- `edge_factor` = user-tuned parameter (0–1) controlling cascade transmission strength
 
 **Key Properties:**
 - Uses log-space arithmetic for numerical stability
-- Only considers already-failed neighbors (c(t,i) = 0)
-- Scales transmission by direct stress (P_direct)
-- Independent of hazard type (wind, flood, etc.)
+- Only failed neighbours contribute (`c(t,i) == 0`)
+- `q` is currently a fixed scalar — see Section 8.2 for how to extend it
 
-### 2.3 Combined Failure Probability
+### 2.3 Two-Pass Failure Mechanism
 
+Direct and cascade failures are evaluated as **two independent passes** each timestep:
+
+**Pass 1 — Direct (flood zone only):**
 ```
-P_fail(j,t) = P_direct(j,t) + P_cascade(j,t) × (1 - P_direct(j,t))
+for each line j currently flooded:
+    if j is intact:
+        p_direct = lognormal_cdf(local_depth_j)
+        if random() < p_direct → mark j failed
 ```
 
-**Logic:** A line fails if hit directly OR infected through cascading (whichever happens first).
+**Pass 2 — Cascade (all intact lines, including outside flood zone):**
+```
+for each line j still intact:
+    p_cascade = 1 - exp(Σ log(1 - q * A[i,j])) over all failed neighbours i
+    if random() < p_cascade → mark j failed
+```
+
+Pass 2 is skipped entirely when `use_si_model=False` (IID mode).
+
+**Important:** A line outside the flood zone can fail via cascade (Pass 2) even though it would never fail from direct flood stress (Pass 1). This is the key difference between IID and SI.
 
 ### 2.4 Network Topology (Adjacency Matrix)
 
@@ -71,6 +86,21 @@ Two power lines are considered adjacent if they share a substation node:
 
 This is bidirectional (undirected graph).
 
+### 2.5 Adaptation from MATLAB Original
+
+The original MATLAB model (SCCIFMI.m) was designed for **windstorm** damage on a node-based network. Key differences in this Python flood adaptation:
+
+| Aspect | MATLAB (wind) | Python (flood) |
+|---|---|---|
+| Hazard type | Wind speed | Flood depth |
+| Model unit | Nodes (substations) | Edges (power lines) |
+| Direct fragility | Piecewise linear in wind speed | Lognormal CDF in flood depth |
+| `q` formula | Depends on edge length + wind intensity | Fixed `edge_factor` |
+| Line types | OH (overhead) vs UG (underground) | Single type |
+| Cascade trigger | Only **newly-failed** nodes (`c(t,i)*(1-c(t-1,i))`) | All failed lines each timestep |
+
+The fixed `edge_factor` is a deliberate simplification: flood-driven cascade transmission lacks published calibration data, so a tunable scalar is used instead of a length/intensity-dependent formula. To extend `q` in future, see Section 8.2.
+
 ---
 
 ## 3. Files Modified
@@ -79,33 +109,33 @@ This is bidirectional (undirected graph).
 
 **Changes Made:**
 
-#### a) Constructor `__init__()` - Added 3 lines
+#### a) Constructor `__init__()` — Added parameters
 ```python
 use_si_model=False,      # Toggle SI cascading model
-edge_factor=0.5,         # Cascade transmission strength (0-1)
+edge_factor=0.5,         # Cascade transmission probability per edge (0-1)
 ```
 
-#### b) New Method: `_build_adjacency_matrix()` (~30 lines)
+#### b) New Method: `_build_adjacency_matrix()` (~20 lines)
 - Constructs N×N binary adjacency matrix from power line topology
 - Reads `from_node` and `to_node` columns from GeoDataFrame
 - Marks lines as connected if they share a node
 
-#### c) New Method: `_compute_cascading_probability()` (~20 lines)
+#### c) New Method: `_compute_cascading_probability(line_idx)` (~15 lines)
 - Computes P_cascade using log-space arithmetic
-- Iterates over all failed neighbors
-- Returns combined cascade probability
+- Iterates over all failed neighbours of `line_idx`
+- Uses fixed `q = edge_factor` per edge
 
-#### d) Modified `step()` method (~10 lines)
-```
+#### d) Modified `step()` — Two-pass structure
+```python
+# Pass 1: direct failures (flooded lines only)
+for i in flooded_lines:
+    if intact: draw against p_direct
+
+# Pass 2: cascade failures (ALL intact lines)
 if use_si_model:
-    p_cascade = compute_cascading_probability(i, p_direct)
-    p_fail = p_direct + p_cascade * (1 - p_direct)
-else:
-    p_fail = p_direct  # Original behavior
+    for i in all_intact_lines:
+        draw against p_cascade
 ```
-
-**Total additions:** ~65 lines of code  
-**Lines modified:** ~10 existing lines (backward compatible)
 
 ---
 
@@ -113,7 +143,7 @@ else:
 
 **Changes Made:**
 
-#### a) Constructor `__init__()` - Added 2 parameters
+#### a) Constructor `__init__()` — Added 2 parameters
 ```python
 use_si_model=False,      # Passed to PowerlineFailureEnv
 edge_factor=0.5,         # Passed to PowerlineFailureEnv
@@ -128,35 +158,30 @@ self._algo2 = PowerlineFailureEnv(
 )
 ```
 
-#### c) Updated `__main__()` example
-- Demonstrates SI model with `use_si_model=True`
-- Shows parameter values in output
+---
 
-**Total additions:** ~6 lines  
-**Lines modified:** ~1 existing line (parameter passing)
+### 3.3 `gym_style/compare.py` (New File)
+
+Side-by-side visualisation of IID vs SI across all three infrastructure layers (power lines, roads, telecom towers). Runs both models in parallel with the same flood data and seed, stepping manually via Enter key.
+
+```
+python gym_style/compare.py
+```
+
+Parameters (top of `main()`):
+- `edge_factor = 0.8`
+- `mu = -0.22` (paper default)
+- `seed = 42`
 
 ---
 
-### 3.3 `flood_sim/algo2_powerline_si.py`
+### 3.4 `flood_sim/algo2_powerline_failure_si.py` (Reference)
 
-**New File Created (~320 lines)**
-
-Standalone implementation with:
-- `assess_powerline_failures()` - Main algorithm
-  - Parameters: `use_si_model` toggle, `edge_factor` control
-  - Returns: L_status (T, N), L_depth (T, N)
-- `build_adjacency_matrix()` - Network topology
-- `compute_cascading_probability()` - Cascade math
-- `load_data()`, `animate_failures()` - Visualization
-- Full example in `__main__`
-
-**Purpose:** Reference implementation, can be used standalone
+Standalone batch implementation. Not used by the gym environments directly — kept as a reference.
 
 ---
 
-## 4. Integration Method
-
-### 4.1 Architecture
+## 4. Integration Architecture
 
 ```
 FloodDisasterEnv (gym_style/flood_env.py)
@@ -164,176 +189,124 @@ FloodDisasterEnv (gym_style/flood_env.py)
      ├─ use_si_model: bool
      ├─ edge_factor: float
      ├─ _adjacency: np.ndarray (N×N)
-     └─ step() → computes P_cascade if use_si_model==True
-  └─ RoadBlockageEnv (unchanged)
-  └─ TelecomFailureEnv (unchanged)
+     └─ step() → Pass 1 (direct) + Pass 2 (cascade, SI only)
+  └─ RoadBlockageEnv   — IID only, no cascade
+  └─ TelecomFailureEnv — no fragility; fails when substation loses power
 ```
 
-### 4.2 Backward Compatibility
-
-✅ **Default behavior unchanged:**
-```python
-# Original way (still works)
-env = PowerlineFailureEnv()  # use_si_model defaults to False
-```
-
-✅ **Existing tests unaffected** (tested with `use_si_model=False`)
-
-✅ **No breaking changes** to observation/action spaces
+Roads (`algo3`) have no cascade mechanism — a blocked road does not cause adjacent roads to block. Telecom towers (`algo4`) do not use SI directly; they inherit the effect through `algo2`'s `L_status`.
 
 ---
 
 ## 5. Usage Guide
 
-### 5.1 Basic Usage: Standalone Algo2
+### 5.1 Basic Usage
 
 ```python
 from gym_style.algo2_powerline import PowerlineFailureEnv
 
-# ✅ Enable SI model (cascading failures)
-env = PowerlineFailureEnv(
-    render_mode="human",
-    use_si_model=True,
-    edge_factor=0.5
-)
-
+env = PowerlineFailureEnv(use_si_model=True, edge_factor=0.6)
 obs, _ = env.reset(seed=42)
-terminated = False
 
+terminated = False
 while not terminated:
     obs, reward, terminated, truncated, info = env.step(0)
-    env.render()
     print(f"Lines failed: {info['lines_failed']}")
 ```
 
-### 5.2 Running in Full Simulator
+### 5.2 Side-by-Side Comparison
 
-```python
-from gym_style.flood_env import FloodDisasterEnv
-
-# Create environment with SI model enabled
-env = FloodDisasterEnv(
-    render_mode="human",
-    use_si_model=True,      # Toggle cascading
-    edge_factor=0.5         # Control cascade strength
-)
-
-obs, _ = env.reset(seed=42)
-terminated = False
-
-while not terminated:
-    obs, reward, terminated, truncated, info = env.step(0)
-    env.render()
-    print(
-        f"Hour {env.t} | "
-        f"Lines: {info['lines_failed']}/{env.n_lines} | "
-        f"Roads: {info['roads_blocked']}/{env.n_roads} | "
-        f"Towers: {info['towers_failed']}/{env.n_towers}"
-    )
+```bash
+python gym_style/compare.py
 ```
 
-### 5.3 Comparing Models
+Produces a 2-panel animated plot: IID (left) vs SI (right), showing power lines, roads, and telecom towers. Press Enter to advance each hour.
+
+### 5.3 Comparing Models Programmatically
 
 ```python
-# IID model (direct only)
-env_iid = PowerlineFailureEnv(use_si_model=False)
-
-# SI model with weak cascading
-env_weak = PowerlineFailureEnv(use_si_model=True, edge_factor=0.2)
-
-# SI model with medium cascading
-env_medium = PowerlineFailureEnv(use_si_model=True, edge_factor=0.5)
-
-# SI model with strong cascading
-env_strong = PowerlineFailureEnv(use_si_model=True, edge_factor=0.9)
+env_iid    = PowerlineFailureEnv(use_si_model=False)
+env_si_low = PowerlineFailureEnv(use_si_model=True, edge_factor=0.2)
+env_si_med = PowerlineFailureEnv(use_si_model=True, edge_factor=0.5)
+env_si_hi  = PowerlineFailureEnv(use_si_model=True, edge_factor=0.9)
 ```
 
 ---
 
 ## 6. Parameter Reference
 
-### 6.1 New Parameters
+### 6.1 SI-Specific Parameters
 
 | Parameter | Type | Default | Range | Description |
 |-----------|------|---------|-------|-------------|
 | `use_si_model` | bool | False | True/False | Enable SI cascading model |
-| `edge_factor` | float | 0.5 | 0.0-1.0 | Cascade transmission strength |
+| `edge_factor` | float | 0.5 | 0.0–1.0 | Per-edge transmission probability `q` |
 
-### 6.2 Original Parameters (Unchanged)
+### 6.2 Fragility Parameters (Unchanged)
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `mu` | float | -0.22 | Lognormal ln-mean (fragility) |
-| `sigma` | float | 0.30 | Lognormal ln-std (fragility) |
-| `flood_path` | str | - | Path to flood data GeoJSON |
-| `powerline_path` | str | - | Path to power line GeoJSON |
-| `render_mode` | str | None | "human" for visualization |
+| `mu` | float | -0.22 | Lognormal ln-mean; median failure at exp(μ) metres |
+| `sigma` | float | 0.30 | Lognormal ln-std |
 
 ### 6.3 Edge Factor Interpretation
 
+`edge_factor` is the probability that a single failed neighbour causes an intact adjacent line to fail:
+
 ```
-edge_factor = 0.0  → No cascading (equivalent to use_si_model=False)
-edge_factor = 0.2  → Weak cascading (5% of direct stress transmits)
-edge_factor = 0.5  → Medium cascading (50% of direct stress transmits)
-edge_factor = 0.9  → Strong cascading (90% of direct stress transmits)
-edge_factor = 1.0  → Maximum cascading (100% of direct stress transmits)
+edge_factor = 0.0  → No cascading (identical to IID)
+edge_factor = 0.2  → Weak cascade   — 20% transmission per failed neighbour
+edge_factor = 0.5  → Medium cascade — 50% transmission per failed neighbour
+edge_factor = 0.9  → Strong cascade — 90% transmission per failed neighbour
 ```
+
+If a line has multiple failed neighbours, probabilities combine via the product formula (P_cascade increases with each additional failed neighbour).
 
 ---
 
 ## 7. Algorithm Comparison
 
-### 7.1 IID Model (Original)
+### 7.1 IID Model
 
-**Failure Mechanism:**
 ```
-For each line j in flooded area:
-  P_fail[j] = lognormal_cdf(flood_depth[j])
-  if random() < P_fail[j]:
-    mark line j as failed
-```
-
-**Characteristics:**
-- ✅ Simple, fast computation O(T×N)
-- ✅ Independent across lines (no feedback)
-- ❌ Ignores network interdependencies
-- ❌ Underestimates failure due to cascading
-
-### 7.2 SI Model (New)
-
-**Failure Mechanism:**
-```
-For each line j in flooded area:
-  P_direct = lognormal_cdf(flood_depth[j])
-  P_cascade = 1 - exp(Σ log(1 - q[i,j] * A[i,j] * c[i]))
-  P_fail[j] = P_direct + P_cascade * (1 - P_direct)
-  if random() < P_fail[j]:
-    mark line j as failed
+Each timestep:
+  for each flooded intact line j:
+    P_fail = lognormal_cdf(depth_j)
+    if random() < P_fail → fail
 ```
 
-**Characteristics:**
+- ✅ Simple, O(T×N)
+- ❌ Ignores network topology
+- ❌ Cannot propagate failures outside flood zone
+
+### 7.2 SI Model
+
+```
+Each timestep:
+  Pass 1 — for each flooded intact line j:
+    P_direct = lognormal_cdf(depth_j)
+    if random() < P_direct → fail
+
+  Pass 2 — for each intact line j (including outside flood):
+    P_cascade = 1 - exp(Σ log(1 - edge_factor * A[i,j])) over failed i
+    if random() < P_cascade → fail
+```
+
 - ✅ Models network topology
-- ✅ Captures cascading effects
-- ✅ More realistic failure growth
-- ⚠️ Slightly higher computation O(T×N²)
-- ⚠️ Requires topological data (from_node, to_node)
+- ✅ Failures can propagate outside flood zone
+- ✅ More failures earlier (faster degradation)
+- ⚠️ O(T×N²) per episode
 
-### 7.3 Expected Output Differences
+### 7.3 Observed Output (seed=42, edge_factor=0.8, mu=-0.22)
 
-Using the same flood data with same random seed:
+| Metric | IID | SI |
+|---|---|---|
+| Lines failed (final) | 136 / 143 | 143 / 143 |
+| Cascade-only failures | 0 | +7 |
+| Towers failed (final) | 125 / 164 | 164 / 164 |
+| Tower difference | — | +39 via cascade |
 
-| Metric | IID Model | SI Model (edge_factor=0.5) | Difference |
-|--------|-----------|---------------------------|-----------|
-| Final failed lines | ~45 | ~62 | +38% |
-| Cascade failure count | 0 | ~17 | By definition |
-| Time to critical failure | T=18 | T=14 | -22% (faster) |
-| Network resilience | High | Medium | Lower |
-
-**Note:** Exact differences depend on:
-- Flood size and intensity
-- Network topology density
-- edge_factor value
-- Random seed
+The cascade effect is most visible mid-simulation (e.g. Hour 13: 5 vs 19 lines failed). By Hour 23 the flood covers the entire network so both models converge toward full failure. The SI model causes failures **earlier and faster**.
 
 ---
 
@@ -341,239 +314,90 @@ Using the same flood data with same random seed:
 
 ### 8.1 Adjacency Matrix Construction
 
-**Algorithm:**
 ```python
 def _build_adjacency_matrix():
     A = N×N zero matrix
     for i in 0..N-1:
-        for j in 0..N-1:
-            if i != j:
-                if lines[i].from_node in (lines[j].from_node, lines[j].to_node) or
-                   lines[i].to_node in (lines[j].from_node, lines[j].to_node):
-                    A[i,j] = 1
-    return A
+        for j in 0..N-1 (j != i):
+            if lines[i].from_node or to_node matches lines[j].from_node or to_node:
+                A[i,j] = 1
+    return A  # symmetric, zero diagonal
 ```
 
-**Complexity:** O(N²) construction, O(1) lookup  
-**Storage:** O(N²) dense matrix  
-**Note:** Can be optimized to sparse matrix if N > 1000
+Built once at `__init__`, reused every timestep.
 
-### 8.2 Cascading Probability Computation
+### 8.2 Cascading Probability & Extending `q`
 
-**Algorithm:**
+Current implementation:
 ```python
-def _compute_cascading_probability(line_j, p_direct):
-    log_sum = 0
-    for i in 0..N-1:
-        if i != j and status[i] == 0:  # if neighbor i failed
-            q_ij = edge_factor * p_direct * A[i,j]
-            term = 1 - q_ij
-            log_sum += log(max(term, 1e-10))
-    
-    return 1 - exp(log_sum)
+def _compute_cascading_probability(self, line_idx):
+    log_sum = 0.0
+    for i in range(self.n_lines):
+        if i != line_idx and self._L_status[i] == 0 and self._adjacency[i, line_idx]:
+            q_ij = self.edge_factor          # ← change this line to extend the model
+            log_sum += log(max(1.0 - q_ij, 1e-10))
+    return 1.0 - np.exp(log_sum)
 ```
 
-**Rationale for log-space:**
-- Avoids numerical underflow when multiplying small probabilities
-- More numerically stable than naive product formula
-- Standard in reliability engineering
+To make `q` depend on flood depth (closer to MATLAB's intensity-dependent formula):
+```python
+q_ij = self.edge_factor * local_depth / max_depth
+```
+
+Only this one line needs changing — all surrounding logic stays the same.
 
 ### 8.3 State Transition
 
-**Per timestep:**
 ```
-t=0: All lines intact (c[i] = 1)
+t=0: all lines intact
 
-for flood_t in flood_data:
-    for each flooded line j:
-        if c[j] == 1:  # still intact
-            p_direct = lognormal_cdf(depth[j])
-            
-            if use_si_model:
-                p_cascade = compute_cascade(j)
-                p_fail = p_direct + p_cascade*(1-p_direct)
-            else:
-                p_fail = p_direct
-            
-            if random() < p_fail:
-                c[j] = 0  # mark failed, stays failed forever
-    
+for each timestep t:
+    Pass 1 (direct):
+        newly in flood zone this step → draw against p_direct
+        failed lines stay failed forever
+
+    Pass 2 (cascade, SI only):
+        all still-intact lines → draw against p_cascade
+        failed lines stay failed forever
+
     t += 1
-
-return c  # final status matrix (T, N)
 ```
 
-**Key Properties:**
-- Once a line fails (c[j]=0), it remains failed
-- Cascading only affects lines still intact
-- No repair or recovery modeled
-- Deterministic given random seed
+No repair or recovery is modelled (S→I only, no R state).
 
 ---
 
-## 9. Validation
+<!-- ## 9. Performance
 
-### 9.1 Sanity Checks Implemented
-
-✅ **P_cascade always returns [0, 1]**
-- Log-space guarantees valid probability
-- Edge case: no failed neighbors → P_cascade = 0
-
-✅ **P_fail monotonically increases with edge_factor**
-- edge_factor=0 → P_fail = P_direct
-- edge_factor>0 → P_fail > P_direct
-
-✅ **Backward compatibility**
-- use_si_model=False produces identical results to original code
-- Verified by comparing step() output
-
-✅ **Network topology consistency**
-- Adjacency matrix is symmetric (A[i,j] = A[j,i])
-- Diagonal is zero (A[i,i] = 0)
-
-### 9.2 Test Cases
-
-Recommended tests:
-```python
-# Test 1: IID vs SI identity when edge_factor=0
-result_iid = env_iid.step(action)
-result_si_zero = env_si_zero.step(action)
-assert result_iid == result_si_zero
-
-# Test 2: Cascading increases with edge_factor
-results = []
-for ef in [0.0, 0.3, 0.6, 0.9]:
-    env = PowerlineFailureEnv(use_si_model=True, edge_factor=ef)
-    obs, _ = env.reset(seed=42)
-    for _ in range(T):
-        env.step(0)
-    results.append(total_failed_lines)
-# Assert: results is strictly increasing
-
-# Test 3: Network isolation
-# Create env with disconnected nodes
-# Verify cascading probability = 0 for isolated nodes
-```
+| Operation | IID | SI |
+|---|---|---|
+| Build adjacency | N/A | O(N²) once |
+| Per timestep | O(N) | O(N²) |
+| Typical runtime (T=24, N=143) | <1ms | <10ms |
+| Memory (adjacency) | N/A | ~160KB |
 
 ---
 
-## 10. Performance Analysis
+## 10. Future Extensions
 
-### 10.1 Computational Complexity
+1. **Depth-dependent `q`** — replace fixed `edge_factor` with `f(flood_depth, edge_length)`
+2. **Line type distinction** — overhead vs underground lines with different `q`
+3. **Sparse adjacency** — use `scipy.sparse` if N > 1000
+4. **Recovery/repair** — add R state (SIR model) with time-to-repair distribution
 
-| Operation | IID Model | SI Model |
-|-----------|-----------|----------|
-| Build adjacency | N/A | O(N²) once at init |
-| P_cascade per line | N/A | O(N) per timestep |
-| Total per episode | O(T×N) | O(T×N) + O(T×N²) |
+--- -->
 
-For typical problem size (T=24, N=87):
-- IID: ~2,088 operations
-- SI: ~2,088 + ~182,808 = ~184,896 operations
-- **Overhead: ~88x slower per step** (still <10ms)
+## 9. References
 
-### 10.2 Memory Usage
-
-| Allocation | Size |
-|-----------|------|
-| L_status (T, N) | ~7KB |
-| L_flooded (N,) | ~0.1KB |
-| Adjacency (N, N) | ~7.6KB |
-| **Total** | **~15KB** |
-
-Negligible for modern systems.
-
----
-
-## 11. Future Extensions
-
-### 11.1 Potential Improvements
-
-1. **Sparse Adjacency Matrix**
-   - Use scipy.sparse.csr_matrix for N > 1000
-   - Reduces O(N²) to O(E) where E = edge count
-
-2. **Temporal Edge Factors**
-   - edge_factor(t) varies over time
-   - Model degrading cascade strength as cascade progresses
-
-3. **Multiple Hazard Types**
-   - Separate edge_factor for wind vs flood
-   - Or data-driven calibration
-
-4. **Line Recovery**
-   - Repair/restoration timeline
-   - Time-to-recovery distributions
-
-5. **Backup & Redundancy**
-   - Alternative power paths
-   - Network rerouting algorithms
-
-### 11.2 Integration Points
-
-- Existing flood/wind/road algorithms unchanged
-- Telecom failure propagation (Algo 4) can use SI status directly
-- Future RL agents can operate on SI environment
-
----
-
-## 12. References
-
-### Papers
-- **MATLAB Implementation:** SCCIFMI.m (referenced in README.md)
-- **Original Paper:** B. V. Venkatasubramanian et al., "Cascading Failures and Resilience in Interdependent Critical Infrastructures," IEEE Systems Journal, vol. 19, no. 4, pp. 999-1010, Dec. 2025.
-
-### Key Concepts
-- **Lognormal Fragility:** Standard in seismic/wind/flood engineering
-- **SI Model:** Adapted from epidemiology (disease propagation)
+- **MATLAB Source:** `SCC IMFI Files/SCC IMFI Files/IMFI Files MATLAB/SCCIFMI.m`
+- **Lognormal Fragility:** Standard in flood/wind/seismic engineering literature
+- **SI Model:** Adapted from epidemiological propagation models
 - **Network Cascading:** Common in power grid reliability analysis
-
----
-
-## 13. Summary Table
-
-| Aspect | Details |
-|--------|---------|
-| **Files Modified** | 2 (algo2_powerline.py, flood_env.py) |
-| **Files Created** | 1 (algo2_powerline_si.py) |
-| **Lines Added** | ~65 core logic + ~320 standalone |
-| **Parameters Added** | 2 (use_si_model, edge_factor) |
-| **Backward Compatible** | ✅ Yes (default behavior unchanged) |
-| **Computation Overhead** | ~88x per step (still <10ms) |
-| **Memory Overhead** | ~8KB (negligible) |
-| **Algorithm Complexity** | O(T×N) IID → O(T×N²) SI |
-| **Expected Output Change** | +30-50% more failures with SI |
-| **Status** | ✅ Ready for use |
-
----
-
-## 14. Quick Reference
-
-### Enable SI Model
-```python
-env = PowerlineFailureEnv(use_si_model=True, edge_factor=0.5)
-```
-
-### Control Cascade Strength
-```python
-weak = PowerlineFailureEnv(use_si_model=True, edge_factor=0.2)
-strong = PowerlineFailureEnv(use_si_model=True, edge_factor=0.8)
-```
-
-### Revert to Original
-```python
-env = PowerlineFailureEnv(use_si_model=False)
-```
-
-### Full Simulator
-```python
-env = FloodDisasterEnv(use_si_model=True, edge_factor=0.5)
-```
 
 ---
 
 **End of Report**
 
-For questions or issues, refer to the inline comments in:
-- `gym_style/algo2_powerline.py` (implementation)
-- `flood_sim/algo2_powerline_si.py` (reference)
+Implementation: `gym_style/algo2_powerline.py`  
+Visualisation: `gym_style/compare.py`  
+Reference (batch): `flood_sim/algo2_powerline_failure_si.py`

@@ -105,20 +105,19 @@ class PowerlineFailureEnv(gym.Env):
         dist = np.sqrt((self._mid_x - ox) ** 2 + (self._mid_y - oy) ** 2)
         self._L_flooded |= dist < radius
 
+        # Direct failures — flooded lines only
         for i in np.where(self._L_flooded)[0]:
             if self._L_status[i] == 1:
                 local_depth = depth * max(0.0, 1.0 - dist[i] / radius) if radius > 0 else 0.0
                 p_direct = self._lognormal_cdf(local_depth)
+                if self.np_random.random() < p_direct:
+                    self._L_status[i] = 0
 
-                if self.use_si_model:
-                    # SI Model: Direct + Cascading
-                    p_cascade = self._compute_cascading_probability(i, p_direct)
-                    p_fail = p_direct + p_cascade * (1.0 - p_direct)
-                else:
-                    # IID Model: Direct only
-                    p_fail = p_direct
-
-                if self.np_random.random() < p_fail:
+        # Cascade failures — ALL intact lines, including outside flood zone
+        if self.use_si_model:
+            for i in np.where(self._L_status == 1)[0]:
+                p_cascade = self._compute_cascading_probability(i)
+                if p_cascade > 0 and self.np_random.random() < p_cascade:
                     self._L_status[i] = 0
 
         self.t += 1
@@ -235,25 +234,18 @@ class PowerlineFailureEnv(gym.Env):
 
         return adjacency
 
-    def _compute_cascading_probability(self, line_idx, direct_prob):
+    def _compute_cascading_probability(self, line_idx):
         """
-        Compute probability of cascading failure through network propagation.
-        P_cascade = 1 - exp(sum of log(1 - q_ij * A_ij * c_i))
+        Compute probability of cascading failure from already-failed neighbours.
+        q_ij = edge_factor * A[i,j] — independent of target's flood stress,
+        so cascade can propagate outside the flood zone.
         """
         log_sum = 0.0
-
         for i in range(self.n_lines):
-            if i != line_idx and self._L_status[i] == 0:  # if neighbor i has failed
-                # Transmission probability through edge (i, line_idx)
-                q_ij = self.edge_factor * direct_prob * self._adjacency[i, line_idx]
-
-                # Probability that line_idx is NOT infected by i
-                term = 1.0 - q_ij
-                log_sum += log(max(term, 1e-10))
-
-        # Convert back from log space
-        cascade_prob = 1.0 - np.exp(log_sum)
-        return cascade_prob
+            if i != line_idx and self._L_status[i] == 0 and self._adjacency[i, line_idx]:
+                q_ij = self.edge_factor
+                log_sum += log(max(1.0 - q_ij, 1e-10))
+        return 1.0 - np.exp(log_sum)
 
     # Expose status for downstream envs (Algo 4)
     @property
